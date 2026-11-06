@@ -1,9 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ivan Alexander Zapata — Video Editor &amp; Director</title>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#050302"><title>Ivan Alexander Zapata — Video Editor &amp; Director</title>
 <meta name="description" content="Ivan Alexander Zapata — Video Editor, Director &amp; Sound Designer.">
 <link rel="icon" href="favicon.ico" sizes="48x48">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
@@ -11,562 +6,569 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700;800&family=Sora:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="core.css">
 <style>
+/* Idea: a dark private cinema. A ring of screens in real CSS 3D curves around the visitor. Only the front one is lit.
+   The page itself never scrolls: sideways turns the ring, up and down walks between rooms, the tabs jump anywhere. */
+html,body{height:100%;overflow:hidden;background:var(--ink)}
+.room{position:fixed;left:0;right:0;top:0;height:100vh;height:100dvh;overflow:hidden;background:var(--ink)}
 
-  :root{
-    --void:#0A0605;
-    --ink:#050302;
-    --panel: rgba(255,255,255,0.06);
-    --crimson:#9E1B32;
-    --scarlet:#E63946;
-    --gold:#D4AF37;
-    --bronze:#8C5A1E;
-    --paper:#F4ECD8;
-    --paper-dim: rgba(244,236,216,0.72);
-    --font-display:'Unbounded', sans-serif;
-    --font-body:'Sora', sans-serif;
-    --font-mono:'Space Mono', monospace;
-    --accent-current: var(--scarlet);
-  }
+/* The stage owns both finger axes because there is no page scroll underneath it. Pinch zoom stays with the browser. */
+.stage{position:absolute;inset:0;overflow:hidden;perspective:var(--P,1800px);perspective-origin:50% var(--cy,40%);
+  background:linear-gradient(to bottom,var(--ink) var(--fy,60%),var(--void));
+  touch-action:none;touch-action:pinch-zoom;cursor:grab;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+  transition:opacity .42s var(--ease),transform .7s var(--ease)}
+.stage.out{opacity:0}
+.stage.held{transition:none;cursor:grabbing}
+.spill{position:absolute;left:50%;top:var(--fy,60%);width:max(150vw,calc(var(--sw)*2.6));height:calc(var(--sh)*1.9);margin-left:calc(max(150vw,calc(var(--sw)*2.6))/-2);margin-top:calc(var(--sh)*-.95);background:radial-gradient(closest-side,var(--crimson),transparent);opacity:0;pointer-events:none}
 
-  *{ box-sizing:border-box; }
-  html, body{ height:100%; margin:0; background:var(--void); }
-  body{
-    color:var(--paper);
-    font-family:var(--font-body);
-    -webkit-font-smoothing:antialiased;
-    scroll-snap-type:y proximity;
-    overflow-y:scroll;
-    scroll-behavior:smooth;
-  }
-  @media (prefers-reduced-motion: reduce){
-    body{ scroll-snap-type:none; scroll-behavior:auto; }
-    *, *::before, *::after{ animation:none !important; transition-duration:0.001ms !important; }
-  }
+/* The ring is a 2px point at the centre of the room, kept above zero because Safari can drop an empty 3D box. It sits nearer the camera than the screens, so it must never catch a tap. Only its transform changes per frame. */
+.ring{position:absolute;left:50%;top:var(--cy,40%);width:2px;height:2px;margin:-1px 0 0 -1px;transform-style:preserve-3d;pointer-events:none}
+.slot{position:absolute;left:calc(1px - var(--sw)/2);top:calc(1px - var(--sh)/2);width:var(--sw);height:var(--sh);pointer-events:auto;will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}
+.face{position:absolute;inset:0;display:block;width:100%;height:100%;overflow:hidden;border-radius:var(--rad,12px);background:var(--void);text-align:left;cursor:inherit;isolation:isolate}
+.slot.front .face{cursor:pointer}
+.still,.live,.live video,.live img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
+.still{transition:transform 1.4s var(--ease)}
+.slot.front:not(.clip) .still{transform:scale(1.06);transition:transform 16s linear}
+.still.lb{top:-16.7%;height:133.4%} /* YouTube's small fallback thumbnail has black bars baked in */
+.live{opacity:0;transition:opacity .6s var(--ease)}
+.live.on{opacity:1}
+.live img{opacity:0;transition:opacity 1.5s var(--ease)}
+.live img.on{opacity:1}
+.live[data-mode=v] img,.live[data-mode=p] video{display:none}
+.pill{position:absolute;left:12px;bottom:12px;display:flex;align-items:center;gap:8px;height:34px;padding:0 14px 0 12px;border-radius:40px;background:rgba(5,3,2,.66);font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--paper);opacity:0;transform:translateY(6px);transition:opacity .4s var(--ease),transform .6s var(--ease);pointer-events:none}
+.pill svg{width:9px;height:11px;fill:currentColor}
+.slot.album .pill svg{display:none}
+.slot.album .pill{padding-left:14px}
+.slot.front .pill{opacity:1;transform:none}
+.moving .slot.front .pill,.titled .slot.front .pill{opacity:0;transform:translateY(6px)}
 
-  img{ max-width:100%; display:block; }
-  ::selection{ background:var(--scarlet); color:var(--ink); }
-  *:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; }
+/* A mirror on a floor lies in the same plane as the thing it reflects, so a flipped copy under the screen is the true image.
+   It fades to nothing exactly where the caption starts, so the words always sit on clean floor. */
+.mirror{position:absolute;left:0;right:0;top:calc(100% + var(--fg,14px));height:var(--mh,100px);overflow:hidden;border-radius:var(--rad,12px);transform:scaleY(-1);opacity:.36;pointer-events:none;-webkit-mask-image:linear-gradient(to top,var(--ink),transparent);mask-image:linear-gradient(to top,var(--ink),transparent)}
+.mirror img,.mirror canvas{position:absolute;left:0;bottom:0;width:100%;height:var(--sh);object-fit:cover}
+.mirror img.lb{bottom:calc(var(--sh)*-.167);height:calc(var(--sh)*1.334)}
+.soft .mirror img,.soft .mirror canvas{filter:blur(2px)}
+/* The floor shows what the screen is really playing: a tiny canvas for a clip (its low resolution is the blur), a second image for a slideshow */
+.sheen{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;transition:opacity .6s var(--ease)}
+.sheen.on{opacity:1}
+.sheen img{opacity:0;transition:opacity 1.5s var(--ease)}
+.sheen img.on{opacity:1}
+.sheen[data-mode=v] img,.sheen[data-mode=p] canvas{display:none}
 
-  /* ===== Slide base ===== */
-  .slide{
-    position:relative;
-    height:100vh;
-    width:100%;
-    overflow:hidden;
-    scroll-snap-align:start;
-    display:flex;
-  }
-  .slide.tall{ height:auto; min-height:100vh; }
+/* Side hit areas: a phone glimpse is narrower than a thumb, so each edge gets a real button at least 48px wide */
+.edge{position:absolute;z-index:2;top:calc(var(--cy,40%) - var(--sh)/2);height:var(--sh);width:var(--ew,48px);cursor:pointer}
+.edge:focus-visible{outline-offset:-5px}
+.edge.prev{left:0}.edge.next{right:0}
+.edge::after{content:'';position:absolute;top:50%;width:11px;height:11px;margin-top:-6px;border:solid var(--paper);border-width:1.5px 1.5px 0 0;opacity:0;transition:opacity .35s var(--ease)}
+.edge.prev::after{left:calc(env(safe-area-inset-left) + 22px);transform:rotate(-135deg)}
+.edge.next::after{right:calc(env(safe-area-inset-right) + 22px);transform:rotate(45deg)}
+.edge:focus-visible::after{opacity:.9}
 
-  .slide-bg-wrap{ position:absolute; inset:-24px; transition:transform .6s cubic-bezier(.22,1,.36,1); }
-  .slide-bg{
-    position:absolute; inset:0;
-    background-size:cover; background-position:center;
-    will-change:opacity, transform;
-  }
+.cap{position:absolute;z-index:1;left:0;right:0;bottom:calc(100% - var(--capy,40%));padding:0 calc(22px + env(safe-area-inset-right)) 0 calc(22px + env(safe-area-inset-left));text-align:center;pointer-events:none;transition:opacity .26s var(--ease),transform .55s var(--ease)}
+.cap.swap{opacity:0;transform:translateY(6px)}
+.titled .cap{opacity:0}
+.cap.probe{visibility:hidden;top:0;bottom:auto}
+.cap .n{margin:0}
+.cap .t{margin:8px 0 6px;font-weight:300;font-size:clamp(21px,2.1vw,30px);line-height:1.2;letter-spacing:-.015em}
+.cap .d{margin:0 auto;max-width:46ch;color:var(--dim);font-size:15px;line-height:1.5}
 
-  .slide-wash{
-    position:absolute; inset:0;
-    mix-blend-mode:soft-light;
-    opacity:.6;
-  }
-  .slide-shade{
-    position:absolute; inset:0;
-    background:linear-gradient(180deg, rgba(5,3,2,0.10) 35%, rgba(5,3,2,0.94) 100%);
-  }
+/* About lives on the front page, as the one screen lit in the room. It is flat, not part of the ring. */
+.card{position:relative;flex:0 1 auto;min-height:0;width:min(1000px,100%);margin-top:clamp(14px,2.6vh,26px);display:grid;grid-template-rows:clamp(92px,16vh,170px) auto;overflow:hidden;border-radius:14px;background:var(--void);box-shadow:inset 0 0 0 1px var(--line),0 24px 90px rgba(158,27,50,.26);text-align:left;pointer-events:auto;touch-action:none;touch-action:pinch-zoom}
+.card.scrolls{overflow-y:auto;touch-action:pan-y pinch-zoom}
+.pic{position:relative;min-height:0;overflow:hidden}
+.pic img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;object-position:50% 22%;pointer-events:none}
+.txt{padding:16px 18px 18px;-webkit-user-select:text;user-select:text}
+.txt h2{margin:0 0 8px;font-weight:300;font-size:clamp(24px,2.6vw,38px);line-height:1.05;letter-spacing:-.025em}
+.txt p{margin:0;font-size:15px;font-weight:300;line-height:1.52;text-indent:1.6em}
+.mail{display:flex;width:fit-content;align-items:center;min-height:46px;margin:14px auto 0;padding:0 20px;border-radius:40px;background:var(--paper);color:var(--ink);font-size:14px;transition:transform .35s var(--ease)}
 
-  [data-accent="crimson"] .slide-wash{ background:radial-gradient(circle at 25% 20%, var(--scarlet), transparent 60%), radial-gradient(circle at 80% 80%, var(--crimson), transparent 55%); }
-  [data-accent="gold"] .slide-wash{ background:radial-gradient(circle at 75% 25%, var(--gold), transparent 60%), radial-gradient(circle at 20% 80%, var(--bronze), transparent 55%); }
+/* Front page. The big name flies up into the marquee when the visitor moves, so it never leaves the screen. */
+.title{position:absolute;z-index:3;left:0;right:0;top:env(safe-area-inset-top);bottom:var(--tabh,60px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px calc(20px + env(safe-area-inset-right)) 10px calc(20px + env(safe-area-inset-left));text-align:center;pointer-events:none}
+.title::before{content:'';position:absolute;z-index:-1;left:50%;top:50%;width:max(120%,620px);height:100%;transform:translate(-50%,-50%);background:radial-gradient(closest-side,rgba(5,3,2,.84) 50%,transparent);transition:opacity .7s var(--ease)}
+.title>*{animation:rise 1.5s var(--ease) backwards;transition:opacity .55s var(--ease),transform .9s var(--ease)}
+.title h1{animation-delay:.1s}.title .tag{animation-delay:.3s}.title .card{animation-delay:.5s}.title .go{animation-delay:.8s}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}}
+.room:not(.titled) .title{visibility:hidden;transition:visibility 0s .95s}
+.room:not(.titled) .title::before{opacity:0}
+.room:not(.titled) .title>*:not(h1){opacity:0;transform:translateY(-12px)}
+.room:not(.titled) .title .card{transform:scale(.94)}
+.title .role{margin:0;line-height:1.7;letter-spacing:.08em}
+.title .role .sep{display:none}
+.title h1{margin:8px 0 12px;font-weight:300;font-size:min(11vw,7vh);line-height:1.04;letter-spacing:-.035em}
+.room:not(.titled) .title h1{transform:translate(var(--nx,0),var(--ny,-200px)) scale(var(--nk,.3));opacity:0;transition:transform .95s var(--ease),opacity .3s linear .6s}
+.title h1 span{display:block}
+.title .tag{margin:0;max-width:30em;font-size:clamp(15px,1.4vw,19px);font-weight:300;line-height:1.42}
+.go{display:inline-flex;align-items:center;gap:10px;min-height:46px;margin-top:6px;padding:0 16px;color:var(--gold);pointer-events:auto;cursor:pointer}
+.go::after{content:'';width:8px;height:8px;margin-top:-4px;border:solid currentColor;border-width:0 1.5px 1.5px 0;transform:rotate(45deg)}
 
-  .slide-mesh{
-    position:absolute; inset:0;
-    background-size:200% 200%;
-    animation:meshShift 14s ease-in-out infinite alternate;
-    will-change:opacity, transform;
-  }
-  @keyframes meshShift{ 0%{ background-position:0% 0%; } 100%{ background-position:100% 100%; } }
-  .mesh-crimson{ background-image:radial-gradient(circle at 20% 30%, var(--scarlet), transparent 55%), radial-gradient(circle at 80% 75%, var(--crimson), transparent 55%); }
-  .mesh-gold{ background-image:radial-gradient(circle at 75% 25%, var(--gold), transparent 55%), radial-gradient(circle at 25% 80%, var(--bronze), transparent 55%); }
+/* The marquee: name and roles stay over the screens in every room */
+.mark{position:absolute;z-index:4;left:50%;top:env(safe-area-inset-top);transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:56px;padding:6px 16px;white-space:nowrap;transition:opacity .5s var(--ease) .45s}
+.titled .mark{opacity:0;visibility:hidden;transition:opacity .2s var(--ease),visibility 0s .2s}
+.who{font-weight:300;font-size:20px;line-height:1.2;letter-spacing:-.012em;color:var(--paper);transition:color .3s var(--ease)}
+.what{letter-spacing:.06em}
 
-  .mesh-spectrum-wrap{ position:absolute; inset:-35%; will-change:opacity, transform; }
-  .mesh-spectrum{
-    position:absolute; inset:0;
-    background:conic-gradient(from 0deg, var(--crimson), var(--scarlet), var(--gold), var(--bronze), var(--ink), var(--crimson));
-    filter:saturate(1.1) blur(70px) brightness(.62);
-    animation:spin 44s linear infinite;
-  }
-  @keyframes spin{ to{ transform:rotate(360deg); } }
+.tabs{position:absolute;z-index:5;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);background:var(--ink)}
+.tabs::before{content:'';position:absolute;left:0;right:0;bottom:100%;height:26px;background:linear-gradient(to top,var(--ink),transparent);pointer-events:none}
+.tabs a{flex:1 1 0;max-width:140px;height:60px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--dim);transition:color .4s var(--ease)}
+.tabs a[aria-current]{color:var(--paper)}
+.tabs a:focus-visible{outline-offset:-6px}
+.tabs i{position:absolute;left:0;top:0;width:22px;height:2px;border-radius:2px;background:var(--gold);transition:transform .7s var(--ease)}
 
-  /* ===== Slide content ===== */
-  .slide-content{
-    position:relative; z-index:3;
-    margin-top:auto;
-    padding:0 8vw 9vh;
-    max-width:760px;
-    will-change:opacity, transform;
-  }
-  .slide-content.center{
-    margin:auto;
-    text-align:center;
-    padding:8vh 8vw;
-    display:flex; flex-direction:column; align-items:center;
-  }
+/* The viewer's box left panning to the browser, which could turn a sideways swipe through an album into a history-back and close it */
+.iz-box{touch-action:pinch-zoom}
 
-  .eyebrow{
-    font-family:var(--font-mono);
-    font-size:12.5px; letter-spacing:.16em; text-transform:uppercase;
-    color:var(--paper-dim);
-    margin-bottom:14px;
-  }
-  .slide-title{
-    font-family:var(--font-display);
-    font-weight:700;
-    font-size:clamp(30px,5vw,56px);
-    line-height:1.05;
-    margin:0 0 14px;
-  }
-  .slide-desc{
-    font-size:16.5px;
-    color:var(--paper-dim);
-    max-width:480px;
-    margin:0 auto;
-  }
-  .center .slide-desc{ margin-left:auto; margin-right:auto; }
-
-  .hero-title{
-    font-family:var(--font-display);
-    font-weight:800;
-    font-size:clamp(40px,9vw,104px);
-    line-height:1;
-    margin:10px 0 4px;
-    background:linear-gradient(90deg, var(--scarlet), var(--crimson), var(--gold), var(--bronze), var(--scarlet));
-    background-size:300% 100%;
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-    animation:gradientShift 8s ease-in-out infinite;
-  }
-  @keyframes gradientShift{ 0%,100%{ background-position:0% 50%; } 50%{ background-position:100% 50%; } }
-
-  .btn-row{ display:flex; gap:14px; flex-wrap:wrap; justify-content:center; margin-top:8px; }
-  .btn{
-    font-family:var(--font-mono); font-size:13px; letter-spacing:.04em;
-    padding:14px 28px; border-radius:40px; cursor:pointer;
-    text-decoration:none; display:inline-flex; align-items:center; gap:8px;
-    border:1.5px solid rgba(244,236,216,0.35);
-    transition:transform .25s ease, border-color .25s ease, background .25s ease;
-  }
-  .btn-primary{ background:var(--paper); color:var(--ink); border-color:var(--paper); }
-  .btn-primary:hover{ transform:translateY(-3px) scale(1.03); }
-  .btn-ghost{ color:var(--paper); background:rgba(255,255,255,0.06); }
-  .btn-ghost:hover{ transform:translateY(-3px); border-color:var(--gold); color:var(--gold); }
-
-  .scroll-hint{
-    margin-top:44px;
-    font-family:var(--font-mono); font-size:11.5px; letter-spacing:.12em; color:var(--paper-dim);
-    display:flex; flex-direction:column; align-items:center; gap:8px;
-  }
-  .chevron{ animation:bob 1.8s ease-in-out infinite; }
-  @keyframes bob{ 0%,100%{ transform:translateY(0); opacity:.5; } 50%{ transform:translateY(8px); opacity:1; } }
-
-  /* ===== About Me (photo + text side by side) ===== */
-  .about-grid{
-    display:flex; gap:48px; align-items:center;
-    max-width:100%;
-  }
-  .about-photo{
-    flex:0 0 240px;
-    border-radius:16px; overflow:hidden;
-    border:1px solid rgba(244,236,216,0.18);
-    box-shadow:0 24px 60px rgba(0,0,0,.5);
-  }
-  .about-photo img{ width:240px; height:300px; object-fit:cover; display:block; }
-  .about-text{ flex:1; min-width:240px; text-align:left; }
-  .about-text .bio-text{ max-width:none; }
-  @media (max-width:720px){
-    .about-grid{ flex-direction:column; }
-    .about-photo{ flex:0 0 auto; }
-    .about-photo img{ width:200px; height:240px; }
-    .about-text{ text-align:center; }
-  }
-
-  /* ===== Video / sound card ===== */
-  .video-frame{
-    width:100%; max-width:520px; aspect-ratio:16/9; border-radius:18px;
-    overflow:hidden; background:#000; position:relative;
-    box-shadow:0 30px 80px rgba(0,0,0,.6);
-    margin:26px auto 0;
-  }
-  .video-frame.lg{ max-width:min(960px, 92vw); }
-  .video-frame video, .video-frame iframe{ width:100%; height:100%; border:0; display:block; background:#000; }
-  .play-btn{
-    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-    width:62px; height:62px; border-radius:50%;
-    background:rgba(5,3,2,0.6); border:1.5px solid rgba(244,236,216,0.55);
-    color:var(--paper); font-size:18px; cursor:pointer;
-    display:flex; align-items:center; justify-content:center;
-    transition:background .25s ease, transform .25s ease;
-  }
-  .play-btn:hover{ background:var(--scarlet); border-color:var(--scarlet); transform:translate(-50%,-50%) scale(1.08); }
-  .play-btn.hidden{ display:none; }
-
-  /* ===== About text ===== */
-  .bio-text{ color:var(--paper-dim); font-size:15.5px; max-width:560px; }
-  .bio-text strong{ color:var(--paper); }
-
-  /* ===== Contact pills (hero) ===== */
-  .contact-card{
-    display:flex; flex-direction:column; align-items:center; gap:4px;
-    background:var(--panel); border:1px solid rgba(244,236,216,0.18);
-    padding:16px 26px; border-radius:14px; text-decoration:none;
-    transition:transform .25s ease, border-color .25s ease;
-  }
-  .contact-card:hover{ transform:translateY(-3px); border-color:var(--gold); }
-  .ct-label{ font-family:var(--font-mono); font-size:10.5px; color:var(--paper-dim); letter-spacing:.1em; }
-  .ct-value{ font-family:var(--font-display); font-weight:600; font-size:15px; }
-
-  /* ===== Fixed UI: counter + dots ===== */
-  #counter{
-    position:fixed; left:24px; bottom:22px; z-index:60;
-    font-family:var(--font-mono); font-size:12px; color:var(--paper-dim);
-    letter-spacing:.06em;
-  }
-  #counter span{ color:var(--paper); }
-
-  #dots{
-    position:fixed; right:22px; top:50%; transform:translateY(-50%); z-index:60;
-    display:flex; flex-direction:column; gap:10px;
-  }
-  .dot{
-    width:8px; height:8px; border-radius:50%; padding:0; border:none; cursor:pointer;
-    background:rgba(244,236,216,0.28);
-    transition:transform .3s ease, background .3s ease;
-  }
-  .dot.active{ background:var(--accent-current); transform:scale(1.5); }
-  @media (max-width:640px){ #dots{ display:none; } #counter{ left:18px; bottom:16px; } }
-
-  .album-label{ font-size:11px; }
-
-  /* ===== Top-left social bar ===== */
-  #social-bar{
-    position:fixed; top:20px; left:24px; z-index:70;
-    display:flex; gap:10px;
-  }
-  #social-bar a{
-    width:36px; height:36px; border-radius:50%;
-    background:rgba(5,3,2,0.55);
-    border:1px solid rgba(244,236,216,0.25);
-    display:flex; align-items:center; justify-content:center;
-    color:var(--paper);
-    backdrop-filter:blur(6px);
-    transition:transform .25s ease, border-color .25s ease, background .25s ease;
-  }
-  #social-bar a:hover{
-    transform:translateY(-2px) scale(1.08);
-    border-color:var(--gold);
-    background:rgba(212,175,55,0.18);
-  }
-  #social-bar svg{ width:16px; height:16px; fill:currentColor; }
-  @media (max-width:560px){
-    #social-bar{ top:14px; left:14px; gap:8px; }
-    #social-bar a{ width:32px; height:32px; }
-    #social-bar svg{ width:14px; height:14px; }
-  }
-
-
-  /* ===== Hub navigation cards (index hub slide) ===== */
-  .hub-grid{
-    display:flex; gap:20px; flex-wrap:wrap; justify-content:center;
-    margin-top:32px; width:100%; max-width:820px;
-  }
-  .hub-card{
-    flex:1 1 220px; min-width:200px;
-    background:var(--panel); border:1px solid rgba(244,236,216,0.18);
-    border-radius:16px; padding:30px 26px; text-decoration:none; color:inherit;
-    display:flex; flex-direction:column; gap:6px; text-align:left;
-    transition:transform .25s ease, border-color .25s ease, background .25s ease;
-  }
-  .hub-card:hover, .hub-card:focus-visible{
-    transform:translateY(-6px); border-color:var(--gold); background:rgba(255,255,255,0.09);
-  }
-  .hub-card-label{ font-family:var(--font-display); font-weight:700; font-size:23px; }
-  .hub-card-sub{ font-family:var(--font-body); font-size:13.5px; color:var(--paper-dim); }
-  .hub-card-arrow{ font-family:var(--font-mono); font-size:12px; color:var(--gold); margin-top:12px; letter-spacing:.04em; }
-
-  /* ===== Back to home (subpages) ===== */
-  #back-home{
-    position:fixed; top:20px; right:24px; z-index:70;
-    font-family:var(--font-mono); font-size:12px; letter-spacing:.06em;
-    background:rgba(5,3,2,0.55); border:1px solid rgba(244,236,216,0.25);
-    color:var(--paper); padding:10px 18px; border-radius:30px;
-    text-decoration:none; backdrop-filter:blur(6px);
-    transition:transform .25s ease, border-color .25s ease, background .25s ease;
-  }
-  #back-home:hover{ transform:translateY(-2px); border-color:var(--gold); background:rgba(212,175,55,0.18); }
-  @media (max-width:560px){ #back-home{ top:14px; right:14px; padding:8px 14px; font-size:11px; } }
-
-
-  /* ===== Page menu dropdown ===== */
-  #page-menu{
-    position:fixed; top:20px; right:24px; z-index:80;
-    font-family:var(--font-mono);
-  }
-  #page-menu-btn{
-    width:42px; height:42px; border-radius:50%;
-    background:rgba(5,3,2,0.55); border:1px solid rgba(244,236,216,0.25);
-    cursor:pointer; backdrop-filter:blur(6px);
-    display:flex; flex-direction:column; gap:5px; align-items:center; justify-content:center;
-    padding:0;
-    transition:transform .25s ease, border-color .25s ease, background .25s ease;
-  }
-  #page-menu-btn span{ display:block; width:18px; height:2px; background:var(--paper); border-radius:2px; }
-  #page-menu-btn:hover{ transform:translateY(-2px); border-color:var(--gold); background:rgba(212,175,55,0.18); }
-  #page-menu-list{
-    position:absolute; right:0; top:calc(100% + 8px);
-    min-width:170px;
-    background:rgba(10,6,5,0.95); border:1px solid rgba(244,236,216,0.2);
-    border-radius:14px; overflow:hidden;
-    backdrop-filter:blur(8px);
-    display:none;
-    box-shadow:0 20px 50px rgba(0,0,0,.5);
-  }
-  #page-menu.open #page-menu-list{ display:block; }
-  #page-menu-list a{
-    display:block; padding:13px 18px;
-    font-size:12px; letter-spacing:.06em;
-    color:var(--paper); text-decoration:none;
-    border-bottom:1px solid rgba(244,236,216,0.08);
-    transition:background .2s ease, color .2s ease;
-  }
-  #page-menu-list a:last-child{ border-bottom:none; }
-  #page-menu-list a:hover{ background:rgba(212,175,55,0.15); color:var(--gold); }
-  #page-menu-list a.current{ color:var(--gold); pointer-events:none; }
-  @media (max-width:560px){
-    #page-menu{ top:14px; right:14px; }
-    #page-menu-btn{ width:36px; height:36px; gap:4px; }
-    #page-menu-btn span{ width:15px; }
-  }
-
-</style>
-</head>
-<body>
-
-  <div id="page-menu">
-    <button id="page-menu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Menu"><span></span><span></span><span></span></button>
-    <div id="page-menu-list">
-      <a href="index.html" class="current">Home</a>
-      <a href="photos.html">Photos</a>
-      <a href="videos.html">Videos</a>
-      <a href="sound-design.html">Sound Design</a>
-    </div>
+@media(hover:hover){
+  .tabs a:hover{color:var(--paper)}
+  .mark:hover .who,.go:hover{color:var(--paper)}
+  .edge:hover::after{opacity:.9}
+  .mail:hover{transform:scale(1.04)}
+}
+@media(min-width:560px){.title .role{letter-spacing:.14em}.title .role br{display:none}.title .role .sep{display:inline}}
+@media(min-width:760px){
+  .mark{top:calc(8px + env(safe-area-inset-top));min-height:70px}
+  .who{font-size:clamp(22px,2.1vw,30px)}
+  .what{letter-spacing:.14em}
+  .tabs a{height:68px}
+  .pill{left:18px;bottom:18px}
+  .txt{padding:clamp(22px,2.8vw,40px)}
+  .txt p{font-size:clamp(15px,1.2vw,18px);line-height:1.6;color:var(--dim)}
+  .mail{margin-top:20px}
+}
+@media(max-width:419px){.what{display:none}}
+@media(min-aspect-ratio:1/1){
+  .title h1{font-size:min(6.2vw,11.5vh,104px)}
+  .title h1 span{display:inline}
+  .card{grid-template-rows:none;grid-template-columns:.92fr 1fr;align-items:center}
+  .pic{align-self:stretch}
+}
+@media(max-height:500px) and (orientation:landscape){
+  .mark{left:calc(8px + env(safe-area-inset-left));top:0;transform:none;align-items:flex-start;min-height:44px;padding:0 8px;text-shadow:0 1px 8px var(--ink)}
+  .who{font-size:16px}
+  .what{display:none}
+  .tabs a{height:46px}
+  .tabs::before{display:none}
+  .cap{text-shadow:0 1px 10px var(--ink)}
+  .cap .t{margin:3px 0 2px;font-size:18px}
+  .cap .d{max-width:none;line-height:1.35}
+  .mirror{display:none}
+  .pill{left:10px;bottom:10px}
+  .title{padding-top:6px;padding-bottom:4px;justify-content:flex-start}
+  .title .role{display:none}
+  .title h1{margin:0 0 2px;font-size:26px}
+  .title .tag{font-size:14px;max-width:none}
+  .card{flex:1 1 0;margin-top:6px;width:min(780px,100%)}
+  .txt{padding:12px 16px}
+  .txt p{line-height:1.42}
+  .mail{margin-top:10px}
+  .go{min-height:44px;margin-top:0}
+}
+@media(max-height:700px){.txt h2{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}.title .role{display:none}}
+</style></head><body>
+<main class="room titled" id="room" data-room="videos">
+  <div class="stage" id="stage" data-scrollbox>
+    <div class="spill" id="spill"></div>
+    <div class="ring" id="ring"></div>
+    <button class="edge prev" id="prev" type="button" data-d="-1"></button>
+    <button class="edge next" id="next" type="button" data-d="1"></button>
+    <div class="cap" id="cap" aria-live="polite"><p class="mono n"></p><h2 class="t"></h2><p class="d"></p></div>
   </div>
-
-  <div id="counter"><span id="counterCurrent">01</span> / <span id="counterTotal">03</span></div>
-  <div id="dots"></div>
-
-  <nav id="social-bar" aria-label="Social links">
-    <a href="mailto:Ivanzapata712@gmail.com" aria-label="Email">
-      <svg viewBox="0 0 24 24"><path d="M2 4h20v16H2V4zm2 2v.01L12 13l8-6.99V6H4zm16 2.24-7.4 6.47a1 1 0 0 1-1.2 0L4 8.24V18h16V8.24z"/></svg>
-    </a>
-  </nav>
-
-<!-- 0 HERO -->
-  <section class="slide no-photo" data-accent="spectrum" id="s0">
-    <div class="mesh-spectrum-wrap bg-layer"><div class="mesh-spectrum"></div></div>
-    <div class="slide-shade"></div>
-    <div class="slide-content center">
-      <div class="eyebrow">CREATIVE DIRECTOR · VIDEO EDITOR · STORYTELLER</div>
-      <h1 class="hero-title">IVAN ALEXANDER<br>ZAPATA</h1>
-
-      <p class="slide-desc" style="margin-top:28px;">If you left without feeling impressed, then I must be doing something wrong.</p>
-      <div class="scroll-hint">SCROLL<div class="chevron">▾</div></div>
-    </div>
-  </section>
-
-  <!-- 1 ABOUT ME -->
-  <section class="slide tall" data-accent="gold" id="s1">
-    <div class="slide-bg-wrap"><div class="slide-bg bg-layer" style="background-image:url('IvanBio.jpg'); background-position:center 30%;"></div></div>
-    <div class="slide-wash"></div><div class="slide-shade"></div>
-    <div class="slide-content" style="max-width:600px;">
-      <h2 class="slide-title">About Me</h2>
-      <p class="bio-text"><strong>Audio Video Media Production graduate determined to create appealing projects that engage viewers</strong> — Interest in media production dates back to when he was a kid recording skits with his friends and uploading them onto YouTube for fun. Later in high school, he took a TV production class where he began to learn the basics of filmmaking and created a short film that placed top two at the Maryland Film Festival 2018. Along the way, he would help co-found a photography business (3/5ths Production) — planning shoots, developing concepts, and capturing images. His drive to create comes from his lifelong dream to entertain and bring joy to those who view his work.</p>
-    </div>
-  </section>
-
-    <!-- 2 EXPLORE (hub) -->
-  <section class="slide no-photo" data-accent="crimson" id="s2">
-    <div class="slide-mesh mesh-crimson bg-layer"></div>
-    <div class="slide-shade"></div>
-    <div class="slide-content center" style="max-width:820px;">
-      <div class="eyebrow">EXPLORE THE WORK</div>
-      <h2 class="slide-title">Where To Next?</h2>
-
-      <div class="hub-grid">
-        <a class="hub-card" href="photos.html">
-          <div class="hub-card-label">Photos</div>
-          <div class="hub-card-sub">Photoshoots &amp; Albums</div>
-          <div class="hub-card-arrow">VIEW PHOTOS →</div>
-        </a>
-        <a class="hub-card" href="videos.html">
-          <div class="hub-card-label">Videos</div>
-          <div class="hub-card-sub">Edits, Short Videos &amp; Full Projects</div>
-          <div class="hub-card-arrow">WATCH VIDEOS →</div>
-        </a>
-        <a class="hub-card" href="sound-design.html">
-          <div class="hub-card-label">Sound Design</div>
-          <div class="hub-card-sub">Foley &amp; Soundscapes</div>
-          <div class="hub-card-arrow">LISTEN IN →</div>
-        </a>
-      </div>
-    </div>
-  </section>
-
-<script>
+  <div class="title" id="title">
+    <p class="mono role" id="role"></p><h1 id="name"></h1><p class="tag" id="tag"></p>
+    <section class="card" id="card" aria-label="About" data-scrollbox>
+      <div class="pic"><img id="bio" alt="Ivan in a field beside a table of fruit" draggable="false"></div>
+      <div class="txt"><h2>About</h2><p id="story"></p><a class="mail" id="mail"></a></div>
+    </section>
+    <button class="mono go" id="go" type="button">See the work</button>
+  </div>
+  <button class="mark" id="mark" type="button"></button>
+  <nav class="tabs" id="tabs" aria-label="Rooms"><i id="bar"></i></nav>
+</main>
+<script src="core.js"></script><script>
 (function(){
-  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var isFinePointer = window.matchMedia('(pointer: fine)').matches;
+var $=function(i){return document.getElementById(i)},root=document.documentElement;
+var room=$('room'),stage=$('stage'),ring=$('ring'),spill=$('spill'),cap=$('cap'),tabs=$('tabs'),bar=$('bar'),mark=$('mark'),prev=$('prev'),next=$('next'),title=$('title'),card=$('card');
+var calm=root.classList.contains('calm'),coarse=matchMedia('(pointer:coarse)').matches,lite=IZ.phone||coarse;
+var POOL=lite?5:7,HALF=(POOL-1)/2,SIDE=lite?.36:.28,TITLE_LIT=lite?.3:.36;
+var mod=function(a,n){return((a%n)+n)%n},pad=function(n){return('0'+n).slice(-2)},clamp=IZ.clamp;
+var ROOMS=[
+  {id:'videos',label:'Videos',group:'videos',items:IZ.videos,act:'Play',at:0},
+  {id:'photos',label:'Photos',group:'albums',items:IZ.albums,act:'View album',at:0},
+  {id:'sound',label:'Sound',group:'sound',items:IZ.sound,act:'Listen',at:0}];
 
-  var accentMap = {
-    crimson:'#E63946', gold:'#D4AF37', spectrum:'#D4AF37'
-  };
+/* Words */
+var parts=IZ.name.split(' ');
+$('name').innerHTML='<span>'+parts[0]+' '+parts[1]+'</span> <span class="z">'+parts[2]+'</span>';
+var roles=IZ.role.split(' · ');$('role').innerHTML=roles.slice(0,-1).join(' · ')+'<span class="sep"> · </span><br>'+roles[roles.length-1];
+$('tag').textContent=IZ.tagline;
+$('bio').src=IZ.bio;$('story').textContent=IZ.about;$('mail').href='mailto:'+IZ.email;$('mail').textContent=IZ.email;
+mark.innerHTML='<span class="who"></span><span class="mono what"></span>';
+mark.firstChild.textContent=IZ.name;mark.lastChild.textContent=IZ.role;mark.setAttribute('aria-label',IZ.name+', back to the front page');
+/* About is the front page, so its tab comes first and matches the order you swipe through */
+var aboutLink=document.createElement('a');aboutLink.href='#about';aboutLink.textContent='About';
+aboutLink.addEventListener('click',function(e){e.preventDefault();showTitle()});tabs.appendChild(aboutLink);
+var links=ROOMS.map(function(r,i){var a=document.createElement('a');a.href='#'+r.id;a.textContent=r.label;
+  a.addEventListener('click',function(e){e.preventDefault();enter();show(i)});tabs.appendChild(a);return a});
 
-  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
-  var counterCurrent = document.getElementById('counterCurrent');
-  var counterTotal = document.getElementById('counterTotal');
-  var dotsWrap = document.getElementById('dots');
+/* The ring is a small pool of real screens, reused as it turns, so any number of projects costs the same to draw */
+if(!lite)room.classList.add('soft');
+var slots=[];
+for(var j=0;j<POOL;j++){
+  var el=document.createElement('div');el.className='slot pool';
+  el.innerHTML='<button class="face" type="button" tabindex="-1" aria-hidden="true"><img class="still" alt="" draggable="false"><span class="pill"><svg viewBox="0 0 9 11" aria-hidden="true"><path d="M0 0l9 5.5L0 11z"/></svg><span></span></span></button><div class="mirror" aria-hidden="true"><img alt="" draggable="false"></div>';
+  ring.appendChild(el);
+  slots.push({el:el,face:el.firstChild,img:el.querySelector('.still'),pill:el.querySelector('.pill span'),mimg:el.querySelector('.mirror img'),mirror:el.querySelector('.mirror'),k:null,x:null,o:-1});
+}
+/* Sharp YouTube poster where one exists, the small one from core.js if not. A project with its own still already has a sharp one with no bars. */
+function sharp(x){return 'https://img.youtube.com/vi/'+x.yt+'/maxresdefault.jpg'}
+function setPic(img,x){
+  function hide(){img.style.visibility='hidden'} /* a picture that fails leaves the dark screen, never a broken-image icon */
+  img.onload=null;img.onerror=hide;img.style.visibility='';img.classList.remove('lb');
+  if(!x.yt||!/^http/.test(x.poster)){img.src=x.poster;return}
+  function fall(){img.onload=null;img.onerror=hide;img.src=x.poster;img.classList.add('lb')}
+  img.onerror=fall;img.onload=function(){if(img.naturalWidth<=120)fall()};img.src=sharp(x);
+}
 
-  counterTotal.textContent = String(slides.length).padStart(2,'0');
-
-  slides.forEach(function(slide, i){
-    var dot = document.createElement('button');
-    dot.className = 'dot';
-    dot.setAttribute('aria-label', 'Go to section ' + (i+1));
-    dot.addEventListener('click', function(){
-      slide.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block:'start' });
-    });
-    dotsWrap.appendChild(dot);
-  });
-  var dots = Array.prototype.slice.call(dotsWrap.children);
-
-  function setActiveUI(index){
-    dots.forEach(function(d, i){ d.classList.toggle('active', i === index); });
-    counterCurrent.textContent = String(index+1).padStart(2,'0');
-    var accent = slides[index].dataset.accent;
-    document.documentElement.style.setProperty('--accent-current', accentMap[accent] || accentMap.crimson);
-  }
-
-  /* ---- Continuous, scroll-coupled crossfade (seamless), overlap-based so it works for slides taller than one viewport too ---- */
-  if(reduceMotion){
-    slides.forEach(function(slide){
-      var bg = slide.querySelector('.bg-layer');
-      if(bg){ bg.style.opacity = 1; }
-      var content = slide.querySelector('.slide-content');
-      if(content){ content.style.opacity = 1; content.style.transform = 'none'; }
-    });
-    setActiveUI(0);
-  } else {
-    var ticking = false;
-
-    function updateFrame(){
-      var vh = window.innerHeight;
-      var bestIndex = 0, bestRatio = -1;
-
-      slides.forEach(function(slide, i){
-        var rect = slide.getBoundingClientRect();
-        var overlap = Math.min(rect.bottom, vh) - Math.max(rect.top, 0);
-        var ratio = Math.max(0, Math.min(1, overlap / vh));
-
-        var bg = slide.querySelector('.bg-layer');
-        if(bg){
-          bg.style.opacity = ratio;
-          var scale = 1.05 + (1 - ratio) * 0.06;
-          bg.style.transform = 'scale(' + scale + ')';
-        }
-        var content = slide.querySelector('.slide-content');
-        if(content){
-          content.style.opacity = ratio;
-          content.style.transform = 'translateY(' + ((1 - ratio) * 26) + 'px)';
-        }
-        if(ratio > bestRatio){ bestRatio = ratio; bestIndex = i; }
-      });
-
-      setActiveUI(bestIndex);
-      ticking = false;
+/* Geometry, all measured so the same code fits a 320px phone and a cinema display */
+var R=1200,STEP=34,PX=700,gap=30,cyRing=300,noFloor=false;
+var probe=cap.cloneNode(true);probe.removeAttribute('id');probe.removeAttribute('aria-live');probe.setAttribute('aria-hidden','true');probe.classList.add('probe');stage.appendChild(probe);
+function fill(box,r,x,i){
+  box.querySelector('.n').textContent=pad(i+1)+' / '+pad(r.items.length);
+  box.querySelector('.t').textContent=x.t;
+  box.querySelector('.d').textContent=x.photos?x.d+' · '+x.photos.length+' photos':x.d;
+}
+function tallestCaption(){var m=0;ROOMS.forEach(function(r){r.items.forEach(function(x,i){fill(probe,r,x,i);m=Math.max(m,probe.offsetHeight)})});return m}
+function even(v){return Math.round(v/2)*2}
+function setVar(k,v){room.style.setProperty(k,v)}
+var laidW=0,laidH=0;
+function layout(){
+  var W=room.clientWidth,H=room.clientHeight,land=H<=500&&W>=H,wide=W>=760,flat=W>H;
+  laidW=W;laidH=H;
+  var tabH=tabs.offsetHeight,topH=land?0:mark.offsetTop+mark.offsetHeight,capH=tallestCaption();
+  var inset=parseFloat(getComputedStyle(tabs).paddingLeft)||0,w,h,refl,top;
+  noFloor=land;
+  if(land){h=H-tabH-capH-22;w=Math.min(h*16/9,W*.6);h=Math.min(h,w*9/16);refl=10}
+  else{
+    var zone=H-topH-tabH-capH;
+    if(wide&&flat){w=W*.52;h=w*9/16;if(h*1.36>zone-24){h=(zone-24)/1.36;w=h*16/9}refl=Math.min(h*.4,zone-h-24)}
+    else{ /* upright: one big screen that grows into a tall phone, with room left for its reflection */
+      w=Math.min(W*.78,wide?640:440);
+      h=Math.min((zone-20)/1.34,wide?w*.75:Math.max(w*.9,Math.min(zone*.5,w*1.1)));refl=h*.34;
     }
-
-    function onScroll(){
-      if(!ticking){ requestAnimationFrame(updateFrame); ticking = true; }
-    }
-    window.addEventListener('scroll', onScroll, { passive:true });
-    window.addEventListener('resize', updateFrame);
-    updateFrame();
   }
+  w=even(w);h=even(h);refl=Math.round(refl);
+  /* the title sits on top of the screen; the spare height goes above it, so the carousel rides low */
+  var lift=wide?16:12;
+  top=land?capH+8:topH+capH+lift+Math.max(0,H-topH-tabH-h-refl-capH-lift)*.66;
+  cyRing=Math.round(top+h/2);
+  gap=wide?30:12;STEP=wide?34:32;
+  R=Math.round((w+gap)/(2*Math.tan(STEP*Math.PI/360)));PX=w+gap;
+  setVar('--sw',w+'px');setVar('--sh',h+'px');
+  setVar('--P',Math.round(R*(wide?1.42:1.5))+'px');setVar('--capy',Math.round(top-(land?4:lift))+'px');
+  setVar('--ew',Math.max(48,Math.round((W-w)/2-gap/2))+'px');setVar('--tabh',tabH+'px');
+  setVar('--rad',(wide?14:12)+'px');setVar('--fg',(wide?18:12)+'px');setVar('--mh',Math.max(0,refl-(wide?18:12))+'px');
+  placeCentre();
+  slots.forEach(function(s){s.k=null});
+  dollyT=titled?R:0;dolly=titled?R:dolly&&dollyT;
+  moveBar();fitCard();flight();render();
+  if(vid&&liveX&&!vid.paused)floorOn(); /* a phone turned mid-clip: stop or restart the floor to match */
+}
+function placeCentre(){
+  var hh=parseFloat(room.style.getPropertyValue('--sh'))||0;
+  setVar('--cy',cyRing+'px');setVar('--fy',Math.round(cyRing+hh/2+6)+'px');
+}
+function fitCard(){card.classList.remove('scrolls');card.classList.toggle('scrolls',card.scrollHeight>card.clientHeight+1)}
+/* Where the big name has to travel to land on the marquee */
+function flight(){
+  var who=mark.firstChild,m=who.getBoundingClientRect(),h=$('name');
+  title.style.setProperty('--nx',Math.round(m.left+m.width/2-room.clientWidth/2)+'px');
+  title.style.setProperty('--ny',Math.round(m.top+m.height/2-title.offsetTop-h.offsetTop-h.offsetHeight/2)+'px');
+  title.style.setProperty('--nk',(parseFloat(getComputedStyle(who).fontSize)/parseFloat(getComputedStyle(h).fontSize)).toFixed(3));
+}
+function tab(){return titled?aboutLink:links[want]}
+function moveBar(){var a=tab();bar.style.transform='translateX('+(a.offsetLeft+a.offsetWidth/2-11)+'px)'}
+function nav(){
+  var on=tab();[aboutLink].concat(links).forEach(function(a){if(a===on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
+  moveBar();history.replaceState(null,'','#'+(titled?'about':ROOMS[want].id));
+}
 
-  /* Keyboard navigation */
-  document.addEventListener('keydown', function(e){
-    var current = parseInt(counterCurrent.textContent, 10) - 1;
-    if(e.key === 'ArrowDown' || e.key === 'PageDown'){
-      e.preventDefault();
-      var next = Math.min(slides.length-1, current+1);
-      slides[next].scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block:'start' });
-    } else if(e.key === 'ArrowUp' || e.key === 'PageUp'){
-      e.preventDefault();
-      var prev = Math.max(0, current-1);
-      slides[prev].scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block:'start' });
-    }
+/* State */
+var cur=0,want=0,pos=0,vel=0,target=0,frontK=null,titled=true,dolly=0,dollyT=0,lit=0,litT=TITLE_LIT;
+var raf=0,last=0,moving=false,g=null,swallow=false,capTimer=0,swapTimer=0;
+var OMEGA=8.5;
+
+function sync(){
+  var c=Math.round(pos),r=ROOMS[cur];
+  slots.forEach(function(s,i){
+    var k=c+mod(i-c+HALF,POOL)-HALF;if(s.k===k)return;
+    s.k=k;s.el.style.transform='rotateY('+(-k*STEP)+'deg) translateZ('+(-R)+'px)';
+    var x=r.items[mod(k,r.items.length)];
+    if(s.x!==x){s.x=x;setPic(s.img,x);setPic(s.mimg,x);s.pill.textContent=r.act;s.el.classList.toggle('album',!!x.photos)}
   });
-
-  /* Subtle parallax on photo slides */
-  if(!reduceMotion && isFinePointer){
-    document.addEventListener('mousemove', function(e){
-      var activeWrap = null, bestRatio = -1;
-      document.querySelectorAll('.slide-bg-wrap').forEach(function(wrap){
-        var rect = wrap.parentElement.getBoundingClientRect();
-        var vh = window.innerHeight;
-        var overlap = Math.min(rect.bottom, vh) - Math.max(rect.top, 0);
-        var ratio = Math.max(0, Math.min(1, overlap / vh));
-        if(ratio > bestRatio){ bestRatio = ratio; activeWrap = wrap; }
-      });
-      if(!activeWrap || bestRatio < 0.4) return;
-      var x = (e.clientX/window.innerWidth - 0.5) * 18;
-      var y = (e.clientY/window.innerHeight - 0.5) * 18;
-      activeWrap.style.transform = 'translate('+x+'px,'+y+'px)';
-    });
-  }
-
-  /* Video play buttons */
-  document.querySelectorAll('.video-frame').forEach(function(box){
-    var video = box.querySelector('video');
-    var btn = box.querySelector('.play-btn');
-    if(!video || !btn) return;
-    btn.addEventListener('click', function(){ video.play(); });
-    video.addEventListener('play', function(){ btn.classList.add('hidden'); });
-    video.addEventListener('pause', function(){ btn.classList.remove('hidden'); });
-    video.addEventListener('ended', function(){ btn.classList.remove('hidden'); });
+}
+function render(){
+  sync();
+  ring.style.transform='translateZ('+(R-dolly).toFixed(2)+'px) rotateY('+(pos*STEP).toFixed(3)+'deg)';
+  var reach=Math.min(HALF,(ROOMS[cur].items.length-1)>>1); /* a short room shows each project once, never the same screen twice */
+  slots.forEach(function(s){
+    var d=Math.abs(s.k-pos),u=Math.min(d,1),o=1-(1-SIDE)*u*u*(3-2*u);
+    if(d>1)o=SIDE*(1-clamp((d-1)/(reach-.5),0,1)*(reach>1?.7:1));
+    if(d>reach+.2)o=0;
+    o=Math.round(o*lit*1000)/1000;
+    if(o!==s.o){s.o=o;s.el.style.opacity=o;s.el.style.visibility=o?'':'hidden'}
   });
-/* Page menu dropdown */
-  var pageMenu = document.getElementById('page-menu');
-  var pageMenuBtn = document.getElementById('page-menu-btn');
-  if(pageMenu && pageMenuBtn){
-    pageMenuBtn.addEventListener('click', function(e){
-      e.stopPropagation();
-      var isOpen = pageMenu.classList.toggle('open');
-      pageMenuBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-    });
-    document.addEventListener('click', function(e){
-      if(pageMenu.classList.contains('open') && !pageMenu.contains(e.target)){
-        pageMenu.classList.remove('open');
-        pageMenuBtn.setAttribute('aria-expanded', 'false');
-      }
-    });
-    document.addEventListener('keydown', function(e){
-      if(e.key === 'Escape' && pageMenu.classList.contains('open')){
-        pageMenu.classList.remove('open');
-        pageMenuBtn.setAttribute('aria-expanded', 'false');
-      }
-    });
+  spill.style.opacity=(.3*lit).toFixed(3);
+}
+function setMoving(v){if(v!==moving){moving=v;room.classList.toggle('moving',v)}}
+function frame(now){
+  raf=0;var dt=Math.min(.4,(now-last)/1000||.016);last=now; /* exact for any step, so a slow phone keeps real time */
+  var busy=false,held=g&&g.axis==='x';
+  if(!held){
+    if(calm){pos=target;vel=0}
+    var x=pos-target,e=Math.exp(-OMEGA*dt),q=(vel+OMEGA*x)*dt;
+    pos=target+(x+q)*e;vel=(vel-OMEGA*q)*e;
+    if(Math.abs(pos-target)<.0008&&Math.abs(vel)<.004){pos=target;vel=0}else busy=true;
   }
+  if(calm){dolly=dollyT;lit=litT}
+  dolly+=(dollyT-dolly)*(1-Math.exp(-dt*2.7));
+  lit+=(litT-lit)*(1-Math.exp(-dt*4.4));
+  if(Math.abs(dolly-dollyT)<.4)dolly=dollyT;else busy=true;
+  if(Math.abs(lit-litT)<.004)lit=litT;else busy=true;
+  render();setFront();
+  setMoving(!!held||Math.abs(pos-target)>.03);
+  if(busy)raf=requestAnimationFrame(frame);
+  if(!held&&!wheelOn&&pos===target)rest();
+}
+function kick(){if(!raf){last=performance.now();raf=requestAnimationFrame(frame)}}
+
+/* Front screen */
+function frontSlot(){if(frontK===null)return null;for(var i=0;i<POOL;i++)if(slots[i].k===frontK)return slots[i];return null}
+function setFront(force){
+  var r=ROOMS[cur];
+  var c=Math.round(pos);if(c===frontK&&!force)return;
+  frontK=c;liveOff();
+  var n=r.items.length,a=document.activeElement,had=!!(a&&a.closest&&a.closest('.pool .face'));
+  slots.forEach(function(s){
+    var on=s.k===c;s.el.classList.toggle('front',on);s.el.classList.toggle('clip',on&&!!s.x.clip&&!s.x.photos&&!IZ.still);
+    if(on){s.face.dataset.open=r.group+':'+mod(c,n);s.face.setAttribute('aria-label',r.act+': '+s.x.t);s.face.removeAttribute('tabindex');s.face.removeAttribute('aria-hidden');if(had)s.face.focus({preventScroll:true})}
+    else{delete s.face.dataset.open;s.face.removeAttribute('aria-label');s.face.tabIndex=-1;s.face.setAttribute('aria-hidden','true')}
+  });
+  prev.setAttribute('aria-label','Previous screen: '+r.items[mod(c-1,n)].t);
+  next.setAttribute('aria-label','Next screen: '+r.items[mod(c+1,n)].t);
+  clearTimeout(capTimer);cap.classList.add('swap');
+  capTimer=setTimeout(function(){fill(cap,r,r.items[mod(c,n)],mod(c,n));cap.classList.remove('swap')},calm?0:190);
+}
+
+/* The one thing on screen that plays: a shared clip, or a slow album slideshow, on the front screen only */
+var live=document.createElement('div'),vid=null,pics=[new Image(),new Image()],liveX=null,showTimer=0,turn=0;
+var sheen=document.createElement('div'),glass=document.createElement('canvas'),ink=glass.getContext('2d'),gleam=[new Image(),new Image()],paintTimer=0;
+live.className='live';pics.forEach(function(p){p.alt='';live.appendChild(p)});
+sheen.className='sheen';sheen.appendChild(glass);gleam.forEach(function(p){p.alt='';sheen.appendChild(p)});
+function liveOff(){
+  liveX=null;clearInterval(showTimer);clearInterval(paintTimer);live.classList.remove('on');sheen.classList.remove('on');
+  pics.concat(gleam).forEach(function(p){p.classList.remove('on')});
+  if(vid)vid.pause();
+}
+function mount(s,mode){
+  live.dataset.mode=sheen.dataset.mode=mode;
+  if(live.parentNode!==s.face)s.face.insertBefore(live,s.face.children[1]);
+  if(sheen.parentNode!==s.mirror)s.mirror.appendChild(sheen);
+}
+function paint(){if(vid.readyState>1)ink.drawImage(vid,0,0,glass.width,glass.height)}
+function floorOn(){
+  clearInterval(paintTimer);if(noFloor||!ink)return;
+  glass.width=160;glass.height=Math.round(160*(vid.videoHeight/vid.videoWidth||.5625));ink.imageSmoothingQuality='high'; /* resizing a canvas resets this; without it the big downscale leaves jagged edges */
+  paint();paintTimer=setInterval(paint,lite?125:66);sheen.classList.add('on');
+}
+function makeVideo(){
+  vid=document.createElement('video');vid.muted=true;vid.defaultMuted=true;vid.loop=true;vid.playsInline=true;vid.preload='auto';
+  ['muted','playsinline','data-manual'].forEach(function(a){vid.setAttribute(a,'')});
+  vid.addEventListener('playing',function(){if(liveX){live.classList.add('on');floorOn()}});
+  live.insertBefore(vid,live.firstChild);
+}
+function playVideo(){var q=vid.play();if(q&&q.catch)q.catch(function(){})} /* refused autoplay leaves the poster showing */
+function rest(){
+  setMoving(false);
+  var s=frontSlot();if(!s||IZ.opened||IZ.still||document.hidden||s.x===liveX)return;
+  var x=s.x;
+  if(x.photos){
+    liveX=x;mount(s,'p');live.classList.add('on');sheen.classList.add('on');
+    var list=x.photos.filter(function(p){return p!==x.poster}).concat(x.poster),i=0;
+    showTimer=setInterval(function(){
+      var src=list[i++%list.length],pre=new Image();
+      pre.onload=function(){
+        if(liveX!==x)return;
+        [pics,gleam].forEach(function(p){p[turn].src=src;p[turn].classList.add('on');p[turn^1].classList.remove('on')});
+        turn^=1;
+      };
+      pre.src=src;
+    },3600);
+  }else if(x.clip){
+    if(!vid)makeVideo();
+    liveX=x;mount(s,'v');
+    if(vid.getAttribute('src')!==x.clip){vid.poster=x.poster;vid.src=x.clip}
+    playVideo();
+  }
+}
+document.addEventListener('visibilitychange',function(){if(document.hidden){liveOff()}else rest()});
+
+/* Moving around */
+function enter(){
+  if(!titled)return;titled=false;room.classList.remove('titled');dollyT=0;litT=1;nav();kick();
+}
+function showTitle(){
+  if(want!==0)show(0);
+  titled=true;room.classList.add('titled');card.scrollTop=0;dollyT=R;litT=TITLE_LIT;nav();kick();
+}
+function go(k){target=k;kick()}
+function step(d){go(Math.round(target)+d)}
+function build(i,dir){
+  cur=i;var r=ROOMS[i];
+  room.dataset.room=r.id;liveOff();frontK=null;placeCentre();
+  slots.forEach(function(s){s.k=null;s.x=null;s.o=-1;s.el.classList.remove('front','clip')});
+  target=r.at;pos=calm?target:target-.42*dir;vel=0;
+  render();setFront(true);kick();
+}
+function show(i){
+  if(i===want)return;
+  var dir=i>want?1:-1;want=i;
+  nav();
+  ROOMS[cur].at=Math.round(target);
+  stage.classList.add('out');stage.style.transform='translate3d(0,'+(-dir*22)+'px,0)';
+  clearTimeout(swapTimer);
+  swapTimer=setTimeout(function(){
+    build(i,dir);
+    stage.classList.add('held');stage.style.transform='translate3d(0,'+(dir*22)+'px,0)';
+    stage.getBoundingClientRect();
+    stage.classList.remove('held','out');stage.style.transform='';
+  },calm?0:300);
+}
+function openFront(s){
+  if(IZ.opened)return;
+  enter();litT=0;kick();if(vid)vid.pause();clearInterval(showTimer);clearInterval(paintTimer);
+  /* the viewer starts from the same sharp picture that is on the screen, so the grow has no jump */
+  IZ.open(s.x.yt?Object.assign({},s.x,{poster:s.img.currentSrc||s.img.src}):s.x,s.face);
+}
+addEventListener('popstate',function(){ /* the viewer is closing: lights up, screen back on */
+  litT=titled?TITLE_LIT:1;kick();
+  setTimeout(function(){var s=frontSlot();if(!s||IZ.opened&&document.querySelector('.iz-scrim.on'))return;clearInterval(showTimer);clearInterval(paintTimer);liveX=null;rest()},680);
+});
+
+/* Taps */
+stage.addEventListener('click',function(e){
+  if(swallow){swallow=false;e.stopPropagation();e.preventDefault();return}
+  if(e.target.closest('.mail'))return;
+  if(titled){e.stopPropagation();enter();return} /* the words lie over the screen, so the first tap only starts the visit */
+  function slotOf(f){return slots.filter(function(n){return n.face===f})[0]}
+  var ed=e.target.closest('.edge');
+  if(ed){ /* a wide window can show two screens under one edge: turn to the one under the pointer */
+    var under=e.detail?document.elementsFromPoint(e.clientX,e.clientY).filter(function(n){return n.matches('.pool .face')})[0]:null;
+    var uk=under?slotOf(under).k:null;
+    if(uk!==null&&uk!==Math.round(pos))go(uk);else step(+ed.dataset.d);
+    return;
+  }
+  var f=e.target.closest('.pool .face');
+  if(f){
+    e.stopPropagation();
+    var s=slotOf(f);
+    if(s.k===Math.round(pos))openFront(s);else go(s.k);
+  }
+});
+mark.addEventListener('click',showTitle);
+$('go').addEventListener('click',enter);
+
+/* Fingers and mouse: the axis locks after 8px, sideways turns the ring, up and down walks between rooms */
+function grab(e){
+  if(IZ.opened||e.button>0)return;
+  if(g){g=null;stage.classList.remove('held');stage.style.transform=stage.style.opacity='';target=Math.round(pos);kick();return} /* second finger: a pinch belongs to the browser */
+  if(e.pointerType==='mouse'&&e.target.closest('.txt'))return;
+  swallow=false;
+  g={id:e.pointerId,x:e.clientX,y:e.clientY,p0:pos,axis:'',lx:e.clientX,lt:e.timeStamp,v:0,was:titled,inCard:!!e.target.closest('.card')};
+}
+stage.addEventListener('pointerdown',grab);card.addEventListener('pointerdown',grab);
+addEventListener('pointermove',function(e){
+  if(!g||e.pointerId!==g.id)return;
+  var dx=e.clientX-g.x,dy=e.clientY-g.y;
+  if(!g.axis){
+    if(Math.abs(dx)<8&&Math.abs(dy)<8)return;
+    g.axis=Math.abs(dx)>=Math.abs(dy)?'x':'y';
+    if(g.axis==='y'&&g.inCard&&card.classList.contains('scrolls')){g=null;return} /* a long About on a small phone scrolls by itself */
+    swallow=true;enter();
+    g.p0=pos;g.x=e.clientX;g.y=e.clientY;g.lx=e.clientX;g.lt=e.timeStamp;dx=dy=0;
+    try{stage.setPointerCapture(g.id)}catch(_){}
+    stage.classList.add('held');
+  }
+  if(g.axis==='x'){
+    pos=g.p0-dx/PX;
+    var t=e.timeStamp-g.lt;
+    if(t>0){g.v=g.v*.7+(-(e.clientX-g.lx)/PX/(t/1000))*.3;g.lx=e.clientX;g.lt=e.timeStamp}
+    kick();
+  }else{
+    stage.style.transform='translate3d(0,'+(dy*.2).toFixed(1)+'px,0)';
+    stage.style.opacity=(1-Math.min(Math.abs(dy)/420,.5)).toFixed(3);
+  }
+});
+function release(e){
+  if(!g||e.pointerId!==g.id)return;
+  var a=g;g=null;stage.classList.remove('held');
+  setTimeout(function(){swallow=false},60);
+  if(a.axis==='x'){
+    var v=e.timeStamp-a.lt>90?0:a.v;
+    var base=Math.round(a.p0),t=Math.round(pos+v*.2);
+    if(t===base&&Math.abs(v)>.7)t=base+(v>0?1:-1);
+    target=clamp(t,base-4,base+4);vel=clamp(v,-7,7);
+    kick();
+  }else if(a.axis==='y'){
+    stage.style.transform=stage.style.opacity='';
+    if(e.type==='pointercancel'||a.was)return;
+    var dy=e.clientY-a.y,quick=Math.abs(dy)>26&&e.timeStamp-a.lt<260;
+    if(Math.abs(dy)<64&&!quick)return;
+    if(dy<0){if(want<ROOMS.length-1)show(want+1)}
+    else if(want>0)show(want-1);else showTitle();
+  }
+}
+addEventListener('pointerup',release);addEventListener('pointercancel',release);
+
+/* Wheel and trackpad: the ring chases the gesture, then settles on the nearest screen, at least one screen per notch */
+var wheelOn=false,wheelF=0,wheelStart=0,wheelTimer=0,wheelMute=0;
+room.addEventListener('wheel',function(e){
+  if(IZ.opened||e.target.closest('.scrolls'))return;
+  e.preventDefault();
+  if(titled){enter();wheelMute=e.timeStamp+260;return} /* the first scroll only starts the visit; its trackpad tail must not spin the ring */
+  if(e.timeStamp<wheelMute){wheelMute=e.timeStamp+160;return}
+  if(e.target.closest('.tabs'))return;
+  var d=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY;if(e.deltaMode===1)d*=33;
+  if(!wheelOn){wheelOn=true;wheelStart=Math.round(target);wheelF=target}
+  wheelF+=d/280;target=wheelF;kick();
+  clearTimeout(wheelTimer);
+  wheelTimer=setTimeout(function(){
+    wheelOn=false;var t=Math.round(wheelF);if(t===wheelStart&&wheelF!==wheelStart)t+=wheelF>wheelStart?1:-1;
+    target=t;kick();
+  },110);
+},{passive:false});
+
+addEventListener('keydown',function(e){
+  if(IZ.opened)return;var k=e.key;
+  if(k==='ArrowRight'||k==='ArrowLeft'){e.preventDefault();enter();step(k==='ArrowRight'?1:-1)}
+  else if(k==='ArrowDown'||k==='ArrowUp'){
+    e.preventDefault();if(titled){if(k==='ArrowDown')enter();return}
+    var i=want+(k==='ArrowDown'?1:-1);if(i<0)showTitle();else if(i<ROOMS.length)show(i);
+  }else if((k==='Enter'||k===' ')&&(document.activeElement===document.body||!document.activeElement)){
+    e.preventDefault();var s=frontSlot();if(titled)enter();else if(s)openFront(s);
+  }
+});
+
+/* Start */
+var start=ROOMS.map(function(r){return r.id}).indexOf(location.hash.slice(1));
+if(start>=0){titled=false;room.classList.remove('titled');litT=1;cur=want=start}
+nav();
+room.dataset.room=ROOMS[cur].id;
+layout();
+dolly=dollyT;
+build(cur,1);pos=target;render();
+/* A timer, not a frame: frames stop while a page is hidden, which left the ring stuck at the size it first loaded in */
+var sized=0;function refit(){clearTimeout(sized);sized=setTimeout(function(){if(room.clientWidth!==laidW||room.clientHeight!==laidH)layout()},60)}
+addEventListener('resize',refit);addEventListener('pageshow',refit);document.addEventListener('visibilitychange',refit);
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(layout);
 })();
-</script>
-</body>
-</html>
+</script></body></html>
