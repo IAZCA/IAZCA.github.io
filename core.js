@@ -3,10 +3,10 @@
   var M='media/', yt=function(id){return 'https://img.youtube.com/vi/'+id+'/maxresdefault.jpg'};
   var videos=[
     {t:'Music Video: Car Vibin',d:'',yt:'-UgO388HKr0',clip:M+'car.mp4',poster:M+'car.jpg'},
+    {t:'Documentary: Music Makes The Movie',d:'',yt:'Ru3RaZ0SZWo',poster:yt('Ru3RaZ0SZWo')},
     {t:'Edit: Malcolm Todd - Earrings',d:'',yt:'0Lm9VfqnqHA',poster:yt('0Lm9VfqnqHA')},
     {t:'Title Sequence: Quarantine Test Opening',d:'',src:'quarantine-test-opening.mp4',clip:M+'quarantine.mp4',poster:M+'quarantine.jpg'},
     {t:'City Symphony: Laurel',d:'',yt:'tgY2s6AMvYc',poster:yt('tgY2s6AMvYc')},
-    {t:'Documentary: Music Makes The Movie',d:'',yt:'Ru3RaZ0SZWo',poster:yt('Ru3RaZ0SZWo')},
     {t:'Short: Homeward Bound',d:'',yt:'hc3AOWaUIW0',poster:yt('hc3AOWaUIW0')},
     {t:'Short: Workout With Isaac',d:'',yt:'fHrctBKT-jo',poster:yt('fHrctBKT-jo')}
   ];
